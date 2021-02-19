@@ -10,16 +10,17 @@ import matplotlib.pyplot as plt
 user_data = pd.read_excel('data_sheets.xlsx', sheet_name='user_data2',index_col=0)
 
 #尝试对第13模块进行AP聚类
-
-weight = user_data['s18'].tolist()
-data = user_data[['Latitude','Longitude']].values
-# print(data)
-
-
+#需要进行筛选
 #对数据进行筛选 只有超过平均数才参与聚类 否则不参与
+weight = user_data['s13'].tolist()
+data = user_data[['Latitude','Longitude','s13']]
 
+data = data[(data['s13']>3.38)]
+print(data)
 
+print(data.iloc[:,2].mean())
 
+data = data.values
 simi = []
 for m in data:
     temp = []
@@ -30,7 +31,7 @@ for m in data:
 
 print(np.min(simi))
 print(np.median(simi))
-p = [x/100 * -1 for x in weight]
+p = [x/10000 * -1 for x in weight]
 print(p)
 ap = AffinityPropagation(damping=0.5,max_iter=5000,convergence_iter=30,preference=p).fit(data)
 
@@ -54,14 +55,14 @@ for m in data:
     c_list.append(c)
 
 ##画图
-colors = ['red','blue','black','green','yellow']
+colors = ['red','blue','black','green','yellow','purple','pink']
 
 
 ##列表才有index属性 要转换一下
 class_cen = class_cen.tolist()
 print(class_cen)
 
-for i in range(400):
+for i in range(68):
     d1 = data[i]
     d2 = data[c_list[i]]
     c = class_cen.index(c_list[i])

@@ -26,7 +26,7 @@ def zoning(x, y):
         return "touristArea"
     elif -37.816248 <= x <= -37.813109 and 144.974443 > y >= 144.968482:
         return "livingArea"
-    elif -37.816248 <= x <= -37.813109 and 144.974443 > y >= 144.968482:
+    elif -37.816492 <= x <= -37.811113 and 144.968482 > y >= 144.953920:
         return "livingArea"
     else:
         return "generalArea"
@@ -34,9 +34,9 @@ def zoning(x, y):
 #生成请求
 def request(area):
     if area == "commercialArea":
-        return [15,1,5,1,15,10]
+        return [15,1,5,1,20,10]
     elif area == "touristArea":
-        return [15,1,5,15,1,10]
+        return [15,1,5,20,1,10]
     elif area == 'livingArea':
         return [15,10,5,1,1,10]
     else: #generalArea

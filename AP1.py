@@ -30,7 +30,7 @@ ap = AffinityPropagation(damping=0.5,max_iter=500,convergence_iter=30,
                          preference=p).fit(Xn)
 
 cluster_centers_indices = ap.cluster_centers_indices_
-
+print(cluster_centers_indices)
 for idx in cluster_centers_indices:
     print(Xn[idx])
 

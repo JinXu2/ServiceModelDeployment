@@ -60,7 +60,7 @@ for i in range(1,21):
             print("moduel "+coloumn+"无法收敛")
             continue
         else:
-            print("聚类成功")
+
             cluster_result.append(len(cluster_centers_indices))
             class_cen = cluster_centers_indices
 
@@ -90,13 +90,13 @@ for i in range(1,21):
                 d1 = selected_data[i]
                 d2 = selected_data[c_list[i]]
                 c = class_cen.index(c_list[i])
-                plt.plot([d2[0],d1[0]],[d2[1],d1[1]],color=colors[c],linewidth=1)
-                #if i == c_list[i] :
-                #    plt.scatter(d1[0],d1[1],color=colors[c],linewidth=3)
-                #else :
-                #    plt.scatter(d1[0],d1[1],color=colors[c],linewidth=1)
-            for i in range(len(data)):
-                plt.scatter(data[i][0],data[i][1],colors="black")
+                #plt.plot([d2[0],d1[0]],[d2[1],d1[1]],color=colors[c],linewidth=1)
+                if i == c_list[i] :
+                   plt.scatter(d1[0],d1[1],color=colors[c],alpha=1)
+                else :
+                   plt.scatter(d1[0],d1[1],color=colors[c],alpha=0.5)
+
+            plt.scatter(x=x2, y=y2, c="black", alpha=0.5)
             plt.savefig("./temp_cluster{}.png".format(coloumn))
             plt.clf()
             print("moduel " + coloumn + "聚类成功")

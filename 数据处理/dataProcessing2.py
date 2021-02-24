@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 '''
 数据预处理：
 对用户进行区域划分，对其他区域人数进行概率减少
-以及生成每个用户对每个应用的请求频率
 '''
 
 # 读取处理后的数据源
@@ -35,17 +34,6 @@ def zoning(x, y):
 
 
 
-#生成请求
-def request(area):
-    if area == "commercialArea":
-        return [15,1,5,1,20,10]
-    elif area == "touristArea":
-        return [15,1,5,20,1,10]
-    elif area == 'livingArea':
-        return [15,10,5,1,1,10]
-    else: #generalArea
-        return [15,1,5,1,1,10]
-
 
 user_data['area'] = user_data.apply(lambda x: zoning(x.Latitude, x.Longitude), axis=1)
 
@@ -62,10 +50,10 @@ for i in range(400):
             delete_list.append(i)
 
 user_data = user_data.drop(labels=delete_list)
-print(user_data)
 
-print(user_data)
-user_data[['r1','r2','r3','r4','r5','r6']]=user_data.apply(lambda x:pd.Series(request(x.area)),axis=1)
+
+
+
 
 #保存 保存到已有的excel中 需要多一步
 wb = openpyxl.load_workbook('./data_sheets.xlsx')
@@ -75,9 +63,6 @@ write.book = wb #没有这句话会覆盖
 user_data.to_excel(write,sheet_name='user_data1',index=False)
 write.save()
 write.close()
-
-
-
 
 
 # 进行划分区域后的可视化

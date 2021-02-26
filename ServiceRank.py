@@ -15,4 +15,25 @@ import matplotlib.pyplot as plt
 '''
 
 # 读取处理后的数据源
-service_cluster_num = pd.read_excel('..\数据处理\data_sheets.xlsx', sheet_name='cluster_result')
+service_cluster_num = pd.read_excel('数据处理\data_sheets.xlsx', sheet_name='cluster_result')
+
+# 第一列 聚类结果
+list1 = service_cluster_num.values.tolist()
+cluster_num = list1[0]
+
+# 第二列 请求频率汇总
+request_num = pd.read_excel('数据处理\data_sheets.xlsx', sheet_name='user_data2')
+request_num = request_num.iloc[:,10:30]
+request_sum = []
+for i in range(20):
+    request_sum.append(request_num.iloc[:,i].sum())
+print(request_sum)
+
+# 第三列 高频率分布的范围 待做
+
+# 第四列 优先级排序后的结果
+
+
+c={'cluster_num':cluster_num,'request_sum':request_sum}
+rank_result = pd.DataFrame(c);
+print(rank_result)

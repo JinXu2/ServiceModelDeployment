@@ -17,6 +17,11 @@ import matplotlib.pyplot as plt
 # 读取处理后的数据源
 service_cluster_num = pd.read_excel('数据处理\data_sheets.xlsx', sheet_name='cluster_result')
 
+# index列
+index = []
+for i in range(1,21):
+    index.append("s"+str(i))
+
 # 第一列 聚类结果
 list1 = service_cluster_num.values.tolist()
 cluster_num = list1[0]
@@ -27,13 +32,27 @@ request_num = request_num.iloc[:,10:30]
 request_sum = []
 for i in range(20):
     request_sum.append(request_num.iloc[:,i].sum())
-print(request_sum)
+# print(request_sum)
 
-# 第三列 高频率分布的范围 待做
+# 第三列 高频率分布的范围 待做 暂时不要了
+# 设定公式
+weight = []
+for i in range(20):
+    weight.append(cluster_num[i]+request_sum[i]/1000*1.1)
 
-# 第四列 优先级排序后的结果
 
+c={'service':index,'cluster_num':cluster_num,'request_sum':request_sum,'weight':weight}
+rank_result = pd.DataFrame(c)
+# 进行排序
+# rank_result.sort_values(by="weight",axis=0,ascending=False,inplace=True)
+# print(rank_result)
 
-c={'cluster_num':cluster_num,'request_sum':request_sum}
-rank_result = pd.DataFrame(c);
-print(rank_result)
+rank_result['rank'] = rank_result['weight'].rank(method="first",ascending=False)
+
+wb = openpyxl.load_workbook('数据处理/data_sheets.xlsx')
+write = pd.ExcelWriter('数据处理/data_sheets.xlsx',engine='openpyxl')
+write.book = wb #没有这句话会覆盖
+
+rank_result.to_excel(write,sheet_name='rank_result',index=False)
+write.save()
+write.close()

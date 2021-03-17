@@ -75,7 +75,7 @@ class Edge:
 
 
 # 创建服务器对象列表
-edge_data = pd.read_excel('数据处理/data_sheets.xlsx', sheet_name='edge_data1')
+
 edge_list = []
 for i in range(40):
     temp = edge_data.loc[i].values[0:-1]

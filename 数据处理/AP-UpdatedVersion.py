@@ -6,17 +6,22 @@ from sklearn import metrics
 
 import matplotlib.pyplot as plt
 
+
+'''
+对于高于平均值的点才进行聚类，有些分布很均匀的会是0 有些无法收敛的也是0 反倒是说明了他们分布很广泛
+'''
 user_data = pd.read_excel('data_sheets.xlsx', sheet_name='user_data2',index_col=0)
 
 cluster_result = []
+sd_result = []
 
-for i in range(1,21):
-    print("当前处理模块",i)
+for i in range(1, 21):
+    print("当前处理模块", i)
     coloumn = 's'+str(i)
     # 读取对应列数的数据
     data = user_data[['Latitude', 'Longitude', coloumn]]
     mean = data[coloumn].mean()
-    print("平均值为",mean)
+    print("平均值为", mean)
     # 对数据进行筛选 只有超过 平均值 才参与聚类 否则不参与
     selected_data = data[(data[coloumn] > mean )]
     selected_num = len(selected_data)
@@ -24,10 +29,21 @@ for i in range(1,21):
     data = data[(data[coloumn] <= mean )]
     # 筛选后数据可能为 0
     if selected_num == 0:
+        sd_result.append(-1);
         cluster_result.append(0);
         print("modeul "+coloumn+"无需聚类,筛选后无数据")
         continue;
     else:
+        # 标准差
+        avg_x = selected_data['Latitude'].mean()
+        avg_y = selected_data['Longitude'].mean()
+
+        sum = 0
+        for j in range(len(selected_data)):
+            sum += pow(abs(selected_data.iloc[j][0] - avg_x) + abs(selected_data.iloc[j][1] - avg_y), 2)
+
+        sd_result.append(pow(sum / (selected_num - 1), 0.5))
+
         # 首先进行可视化展示
         # 对于该模块请求大于 平均值 的 在全用户分布对比下的 分布情况
         plt.title('Request Distribution'+coloumn)
@@ -50,7 +66,7 @@ for i in range(1,21):
         # 进行AP聚类
         weight = selected_data[coloumn]
         selected_data = selected_data[['Latitude','Longitude']].values
-        #bprint(selected_data)
+        # bprint(selected_data)
         '''
         这个参数总算是调对了！
         '''
@@ -64,14 +80,14 @@ for i in range(1,21):
 
         if len(cluster_centers_indices) == 0:
             cluster_result.append(0)
-            print("moduel "+coloumn+"无法收敛")
+            print("module "+coloumn+"无法收敛")
             continue
         else:
 
             cluster_result.append(len(cluster_centers_indices))
             class_cen = cluster_centers_indices
 
-            ##根据聚类中心划分数据
+            # 根据聚类中心划分数据
             c_list = []
             for m in selected_data:
                 temp = []
@@ -81,15 +97,15 @@ for i in range(1,21):
                     # print(n)
                     d = -np.sqrt((m[0]-n[0])**2 + (m[1]-n[1])**2)
                     temp.append(d)
-                ##按照是第几个数字作为聚类中心进行分类标识
+                # 按照是第几个数字作为聚类中心进行分类标识
                 c = class_cen[temp.index(np.max(temp))]
                 c_list.append(c)
 
-            ##画图
+            # 画图
             colors = ['red','blue','green','yellow','purple','pink']
 
 
-            ##列表才有index属性 要转换一下
+            # 列表才有index属性 要转换一下
             class_cen = class_cen.tolist()
             # print(class_cen)
             plt.clf()
@@ -106,17 +122,55 @@ for i in range(1,21):
             plt.scatter(x=x2, y=y2, c="black", alpha=0.5)
             plt.savefig("./temp_cluster{}.png".format(coloumn))
             plt.clf()
-            print("moduel " + coloumn + "聚类成功")
+            print("module " + coloumn + "聚类成功")
 
-#保存聚类结果
+# 保存聚类结果
 print(cluster_result)
-list = []
-list.append(cluster_result)
-df = pd.DataFrame(list, columns=['s1', 's2', 's3','s4','s5','s6','s7','s8','s9','s10','s11','s12','s13','s14','s15','s16','s17','s18','s19','s20'])
+
+
+# 离散度计算 选的是大于等于平均值的点
+user_data = pd.read_excel('data_sheets.xlsx', sheet_name='user_data2', index_col=0)
+
+sd_result = []
+
+for i in range(1, 21):
+    print("当前处理模块", i)
+    coloumn = 's' + str(i)
+    # 读取对应列数的数据
+    data = user_data[['Latitude', 'Longitude', coloumn]]
+    mean = data[coloumn].mean()
+    print("平均值为", mean)
+    # 对数据进行筛选 只有超过 平均值 才参与聚类 否则不参与
+    selected_data = data[(data[coloumn] >= mean)]
+    selected_num = len(selected_data)
+    print("筛选后数据共有", selected_num)
+    data = data[(data[coloumn] <= mean)]
+    # 筛选后数据可能为 0
+    if selected_num == 0:
+        sd_result.append(-1)
+        print("module " + coloumn + "筛选后无数据")
+        continue
+    else:
+        avg_x = selected_data['Latitude'].mean()
+        avg_y = selected_data['Longitude'].mean()
+
+        sum = 0
+        for i in range(len(selected_data)):
+            sum += pow(abs(selected_data.iloc[i][0] - avg_x) + abs(selected_data.iloc[i][1] - avg_y), 2)
+
+        sd_result.append(pow(sum / (selected_num - 1), 0.5))
+
+
+print(sd_result)
+
+
+result_list = [cluster_result, sd_result]
+
+df = pd.DataFrame(result_list, columns=['s1', 's2', 's3','s4','s5','s6','s7','s8','s9','s10','s11','s12','s13','s14','s15','s16','s17','s18','s19','s20'])
 wb = openpyxl.load_workbook('./data_sheets.xlsx')
-write = pd.ExcelWriter('./data_sheets.xlsx',engine='openpyxl')
+write = pd.ExcelWriter('./data_sheets.xlsx', engine='openpyxl')
 write.book = wb #没有这句话会覆盖
 
-df.to_excel(write,sheet_name='cluster_result',index=False)
+df.to_excel(write,sheet_name='cluster_result', index=False)
 write.save()
 write.close()

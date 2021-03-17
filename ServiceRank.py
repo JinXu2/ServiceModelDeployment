@@ -34,24 +34,29 @@ for i in range(20):
     request_sum.append(request_num.iloc[:,i].sum())
 # print(request_sum)
 
-# 第三列 高频率分布的范围 待做 暂时不要了
+# 第三列 高频率分布的离散度 -> 标准差 二维随机向量的标准差
+
+sta_dev = list1[1]
+
+
+
 # 设定公式
 weight = []
 for i in range(20):
-    weight.append(cluster_num[i]+request_sum[i]/1000*1.1)
+    weight.append(cluster_num[i]+request_sum[i]/1000*1.1+(0 if(sta_dev[i]==-1) else sta_dev[i] * 100))
 
 
-c={'service':index,'cluster_num':cluster_num,'request_sum':request_sum,'weight':weight}
+c={'service':index,'cluster_num':cluster_num,'request_sum':request_sum,'sta_dev':sta_dev,'weight':weight}
 rank_result = pd.DataFrame(c)
 # 进行排序
 # rank_result.sort_values(by="weight",axis=0,ascending=False,inplace=True)
 # print(rank_result)
 
-rank_result['rank'] = rank_result['weight'].rank(method="first",ascending=False)
+rank_result['rank'] = rank_result['weight'].rank(method="first",ascending=True)
 
 wb = openpyxl.load_workbook('数据处理/data_sheets.xlsx')
 write = pd.ExcelWriter('数据处理/data_sheets.xlsx',engine='openpyxl')
-write.book = wb #没有这句话会覆盖
+write.book = wb # 没有这句话会覆盖
 
 rank_result.to_excel(write,sheet_name='rank_result',index=False)
 write.save()

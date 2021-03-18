@@ -47,15 +47,15 @@ class KMediod():
         :param func_of_dis:
         :return:
         """
-        print('初始化', self.k_num_center, '个中心点')
+        # print('初始化', self.k_num_center, '个中心点')
         indexs = list(range(len(self.data)))
-        random.shuffle(indexs)  # 随机选择质心
+        # random.shuffle(indexs)  # 随机选择质心 为了每次结果能一样 就不随机选择质心了
         init_centroids_index = indexs[:self.k_num_center]
         centroids = self.data[init_centroids_index, :]  # 初始中心点
         # print(centroids)
         # 确定种类编号
         levels = list(range(self.k_num_center))
-        print('开始迭代')
+        # print('开始迭代')
         sample_target = []
         if_stop = False
         while (not if_stop):
@@ -82,10 +82,10 @@ class KMediod():
                         now_distances = new_distance
                         centroids[i] = point  # 换成该点
                         if_stop = False
-        print('结束')
+        # print('结束')
 
         # 想要获取中心点的index
-        print(centroids)
+        # print(centroids)
         return sample_target, centroids
 
     def run(self):
@@ -96,8 +96,15 @@ class KMediod():
         # self.get_test_data()
         # 需要的是 中心点的结果
         predict, centroids = self.run_k_center(self.ou_distance)
-        pyplot.scatter(self.data[:, 1], self.data[:, 2], c='red', alpha=0.5)
+        # print("predict是")
+        # print(predict)
+        red_color = ['lightcoral', 'indianred', 'firebrick', 'darkred', 'rosybrown', 'salmon', 'tomato']
+
+        for i in range(len(self.data)):
+            pyplot.scatter(self.data[i, 1], self.data[i, 2], c=red_color[predict[i]], alpha=0.8)
+
         pyplot.scatter(centroids[:, 1], centroids[:, 2], c='red', marker="*")
+        return centroids
         # pyplot.show()
 
     def run2(self):
@@ -108,45 +115,63 @@ class KMediod():
         # self.get_test_data()
         # 需要的是 中心点的结果
         predict, centroids = self.run_k_center(self.ou_distance)
-        pyplot.scatter(self.data[:, 1], self.data[:, 2], c='blue', alpha=0.5)
+        blue_color = ['dodgerblue', 'steelblue', 'lightskyblue', 'deepskyblue', 'cadetblue', 'darkturquoise']
+        for i in range(len(self.data)):
+            pyplot.scatter(self.data[i, 1], self.data[i, 2], c=blue_color[predict[i]], alpha=0.8)
         pyplot.scatter(centroids[:, 1], centroids[:, 2], c='blue', marker="+")
+        return centroids
         # pyplot.show()
 
 
-edge_data = pd.read_excel('数据处理/data_sheets.xlsx', sheet_name='edge_data1')
-for i in range(1, 2):
-    print("当前处理模块", i)
-    column = 's' + str(i)
-    # 根据redundant获得的冗余部署模块数
-    k_num = 9 # 测试写9
-    # 读取对应列数的数据
-    data = edge_data[['index', 'LATITUDE', 'LONGITUDE', column]]
-    mean = data[column].mean()
-    total = data[column].sum()
-    print("平均值为", mean)
+# edge_data = pd.read_excel('数据处理/data_sheets.xlsx', sheet_name='edge_data1')
+# for i in range(13, 14):
+#     print("当前处理模块", i)
+#     column = 's' + str(i)
+#     # 根据redundant获得的冗余部署模块数
+#     k_num = 9 # 测试写9
+#     # 读取对应列数的数据
+#     data = edge_data[['index', 'LATITUDE', 'LONGITUDE', column]]
+#     mean = data[column].mean()
+#     total = data[column].sum()
+#     print("平均值为", mean)
+#
+#     # 对数据进行筛选 只有超过 平均值 才参与聚类 否则不参与
+#     selected_data = data[(data[column] > mean)]
+#     selected_num = len(selected_data)
+#     high_total = selected_data[column].sum()
+#     proportion = high_total/total
+#     # 算出低频高频能分到多少个
+#     high_k_num = int(k_num * proportion)
+#     low_k_num = k_num - high_k_num
+#
+#     data = data[(data[column] <= mean)]
+#     num = len(data)
+#
+#     selected_data = selected_data[['index', 'LATITUDE', 'LONGITUDE']].values
+#     data = data[['index', 'LATITUDE', 'LONGITUDE']].values
+#
+#     # print(type(selected_data))
+#     # print(selected_data.shape)
+#     test_one = KMediod(n_points=selected_num, k_num_center=high_k_num, data=selected_data)
+#     test_one.run()
+#     test_two = KMediod(n_points=num, k_num_center=low_k_num, data=data)
+#     test_two.run2()
+#     pyplot.show()
 
-    # 对数据进行筛选 只有超过 平均值 才参与聚类 否则不参与
-    selected_data = data[(data[column] > mean)]
-    selected_num = len(selected_data)
-    high_total = selected_data[column].sum()
-    proportion = high_total/total
-    # 算出低频高频能分到多少个
-    high_k_num = int(k_num * proportion)
-    low_k_num = k_num - high_k_num
+'''
+   KMEANS能实现，问题是 不是原先的点 还是要使用k-medios
 
-    data = data[(data[column] <= mean)]
-    num = len(data)
-
-    selected_data = selected_data[['index', 'LATITUDE', 'LONGITUDE']].values
-    data = data[['index', 'LATITUDE', 'LONGITUDE']].values
-
-    # print(type(selected_data))
-    # print(selected_data.shape)
-    test_one = KMediod(n_points=selected_num, k_num_center=high_k_num, data=selected_data)
-    test_one.run()
-
-    test_two = KMediod(n_points=len(data), k_num_center=low_k_num, data=data)
-    test_two.run2()
-    pyplot.show()
-
-
+    selected_data = selected_data[['LATITUDE','LONGITUDE']].values
+    print(type(selected_data))
+    print(selected_data.shape)
+    estimator = KMeans(5)
+    # fit传入的是二维数组
+    estimator.fit(selected_data)
+    label_pred = estimator.labels_
+    colors = ['blue', 'green', 'yellow', 'pink', 'red']
+    for i in range(5):
+        x = selected_data[label_pred == i]
+        print(x)
+        plt.scatter(x[:, 0], x[:, 1], c=colors[i], label=str(i))
+    plt.show()
+'''

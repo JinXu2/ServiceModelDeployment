@@ -35,27 +35,27 @@ edge_data.to_excel(write,sheet_name='edge_data')
 write.save()
 write.close()
 
-plt.title('User&ES Distribution')
-Label = ['User','Edge Server']
-colors = ['b','r']
-
-plt.xlabel('Latitude')
-plt.ylabel('Longitude')
-
-x1 = edge_data['LATITUDE']
-y1 = edge_data['LONGITUDE']
-x2 = user_data['Latitude']
-y2 = user_data['Longitude']
-
-plt.figure(figsize=(100,100))
-
-plt.scatter(x=x1,y=y1,c=colors[0],alpha=0.5)
-plt.scatter(x=x2,y=y2,c=colors[1],alpha=0.5)
-
-for(x, y) in zip(x2, y2):
-    plt.text(x,y,['%0.6f' % x,'%0.6f' % y],fontdict={'fontsize':4})
-
-plt.savefig('User&ES Distribution.png')
-plt.show()
-
+# plt.title('User&ES Distribution')
+# Label = ['User','Edge Server']
+# colors = ['b','r']
+#
+# plt.xlabel('Latitude')
+# plt.ylabel('Longitude')
+#
+# x1 = edge_data['LATITUDE']
+# y1 = edge_data['LONGITUDE']
+# x2 = user_data['Latitude']
+# y2 = user_data['Longitude']
+#
+# plt.figure(figsize=(100,100))
+#
+# plt.scatter(x=x1,y=y1,c=colors[0],alpha=0.5)
+# plt.scatter(x=x2,y=y2,c=colors[1],alpha=0.5)
+#
+# for(x, y) in zip(x2, y2):
+#     plt.text(x,y,['%0.6f' % x,'%0.6f' % y],fontdict={'fontsize':4})
+#
+# plt.savefig('User&ES Distribution.png')
+# plt.show()
+#
 

@@ -1,5 +1,7 @@
-class EdgeServer:
-    def __init__(self,latitude,longitude):
-        self.latitude=latitude
-        self.longitude=longitude
-        self.modules = []
+class Edge:
+    def __init__(self, no, latitude, longitude, capacity):
+        self.no = no
+        self.latitude = latitude
+        self.longitude = longitude
+        self.capacity = capacity
+

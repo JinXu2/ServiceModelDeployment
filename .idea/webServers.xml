@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="d9e648aa-25f9-425b-a5db-56bcac83a658" name="服务器">
+        <fileTransfer rootFolder="/home/t640" accessType="SFTP" host="218.193.154.235" port="22" sshConfigId="d064a76a-e680-45d8-a35d-f39a32440619" sshConfig="t640@218.193.154.235:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

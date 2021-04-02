@@ -5,3 +5,4 @@ class User:
         self.latitude = latitude
         self.longitude = longitude
         self.request = request
+

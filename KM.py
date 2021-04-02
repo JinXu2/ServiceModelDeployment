@@ -49,7 +49,7 @@ class KMediod():
         """
         # print('初始化', self.k_num_center, '个中心点')
         indexs = list(range(len(self.data)))
-        # random.shuffle(indexs)  # 随机选择质心 为了每次结果能一样 就不随机选择质心了
+        random.shuffle(indexs)  # 随机选择质心 为了每次结果能一样 就不随机选择质心了
         init_centroids_index = indexs[:self.k_num_center]
         centroids = self.data[init_centroids_index, :]  # 初始中心点
         # print(centroids)

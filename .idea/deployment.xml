@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" autoUpload="Always" serverName="t640@218.193.154.235:22 password" remoteFilesAllowedToDisappearOnAutoupload="false">
+    <serverData>
+      <paths name="t640@218.193.154.235:22 password">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/t640/xj/ServiceModelDeployment/ServiceModelDeployment" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="服务器">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/xj/ServiceModelDeployment/ServiceModelDeployment" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
+  </component>
+</project>

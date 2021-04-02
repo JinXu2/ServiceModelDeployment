@@ -48,7 +48,7 @@ for i in range(len(user_data)):
     temp_user = User(i + 1, temp[1], temp[2], temp[3], temp[4:])
     user_list.append(temp_user)
 
-redundancy = [9, 7, 9, 7, 6, 6, 5, 6, 6, 3, 4, 3, 5, 5, 5, 5, 5, 3, 3, 3]
+redundancy = [4, 6, 4, 6, 6, 4, 4, 6, 4, 6, 6, 4, 7, 9, 5, 7, 7, 6, 4, 4]
 capacity = [8, 8, 6, 7, 6, 5, 5, 8, 7, 7, 7, 6, 7, 5, 6, 8, 6, 7, 8, 7, 5, 6, 8, 7, 7, 7, 7, 6, 7, 7, 8, 6, 7, 6, 7, 6,
             6, 5, 7, 7]
 service_data = pd.read_excel('数据处理/data_sheets.xlsx', sheet_name='rank_result')
@@ -169,7 +169,7 @@ def latency_first_plan():
             dis[i][j] = dis[j][i] = temp
 
     for i in range(1, 21):
-        need = redundancy[i-1]
+        need = redundancy[i - 1]
         # 开始创建该模块的请求频率矩阵
         column = 's' + str(i)
         df = edge_data[column]
@@ -194,6 +194,24 @@ def latency_first_plan():
     return plan
 
 
+def load_balance_plan():
+    plan = [[] for i in range(40)]
+    # 那不就是按照顺序 1 2 3 4 的放进去
+    service = []
+    for i in range(20):
+        tmp = redundancy[i]
+        for j in range(tmp):
+            service.append(i + 1)
+    print(service)
+    index = 0
+    j = 0
+    while index < len(service):
+        plan[j].append(service[index])
+        j += 1
+        j %= 40
+        index += 1
+    return  plan
+
 def translate(plan):
     for i in range(len(plan)):
         if len(plan[i]) < capacity[i]:
@@ -206,25 +224,57 @@ def translate(plan):
 if __name__ == '__main__':
     # print("随机算法")
     # plan = translate(random_plan())
+    # print(plan)
+    # print(len(plan))
     # compute = DAG(plan=plan, service_type_sum=20, edge_list=edge_list, app_list=app_list)
     # res = compute.run(user_list=user_list)
     # print("该方案总延迟为", res)
     #
     # print("随机平均算法")
     # plan = translate(random_plan())
+    # print(plan)
+    # print(len(plan))
     # compute = DAG(plan=plan, service_type_sum=20, edge_list=edge_list, app_list=app_list)
     # res = compute.run(user_list=user_list)
     # print("该方案总延迟为", res)
-
+    #
     # print("最大请求频率算法")
     # plan = translate(request_first_plan())
+    # print(plan)
+    # print(len(plan))
     # compute = DAG(plan=plan, service_type_sum=20, edge_list=edge_list, app_list=app_list)
     # res = compute.run(user_list=user_list)
     # print("该方案总延迟为", res)
-
-    print("最低延迟算法")
-    plan = translate((latency_first_plan()))
+    #
+    # print("最低延迟算法")
+    # plan = translate((latency_first_plan()))
+    # print(plan)
+    # print(len(plan))
+    # compute = DAG(plan=plan, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    # res = compute.run(user_list=user_list)
+    # print("该方案总延迟为", res)
+    print("负载均衡算法")
+    plan = translate((load_balance_plan()))
+    print(plan)
+    print(len(plan))
     compute = DAG(plan=plan, service_type_sum=20, edge_list=edge_list, app_list=app_list)
     res = compute.run(user_list=user_list)
     print("该方案总延迟为", res)
+
+    # print("GA算法")
+    # plan = [[2, 16, 17, -1, -1, -1, -1, -1], [1, 3, -1, -1, -1, -1, -1, -1], [1, 4, 12, 17, 19, -1],
+    #         [3, 8, -1, -1, -1, -1, -1], [-1, -1, -1, -1, -1, -1], [2, 6, 8, 15, -1], [1, 4, 6, 9, 10],
+    #         [-1, -1, -1, -1, -1, -1, -1, -1], [2, 8, -1, -1, -1, -1, -1], [-1, -1, -1, -1, -1, -1, -1],
+    #         [5, 13, -1, -1, -1, -1, -1], [7, 9, 13, -1, -1, -1], [4, 5, 16, -1, -1, -1, -1], [2, 8, 12, 19, 20],
+    #         [1, 2, 3, 6, 8, 10], [-1, -1, -1, -1, -1, -1, -1, -1], [6, 9, 18, -1, -1, -1], [3, 5, 11, -1, -1, -1, -1],
+    #         [2, 3, -1, -1, -1, -1, -1, -1], [4, 6, -1, -1, -1, -1, -1],
+    #         [5, 14, 15, 16, 18], [3, 4, 10, 13, -1, -1], [-1, -1, -1, -1, -1, -1, -1, -1], [7, 13, -1, -1, -1, -1, -1],
+    #         [15, -1, -1, -1, -1, -1, -1], [1, 4, 7, 16, -1, -1, -1], [1, 3, 5, 11, 14, 20, -1], [2, 8, 12, 14, 15, 19],
+    #         [-1, -1, -1, -1, -1, -1, -1], [3, 7, 11, -1, -1, -1, -1], [17, -1, -1, -1, -1, -1, -1, -1],
+    #         [6, 7, 9, 14, 16, 20], [1, 3, 9, 14, 15, -1, -1], [-1, -1, -1, -1, -1, 16], [9, 11, 18, -1, -1, -1],
+    #         [1, 4, 17, -1, -1, -1], [-1, -1, -1, -1, -1, -1], [13, -1, -1, -1, -1], [5, -1, -1, -1, -1, -1, -1],
+    #         [1, 17, -1, -1, -1, -1, -1]]
+    # compute = DAG(plan=plan, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    # res = compute.run(user_list=user_list)
+    # print("该方案总延迟为", res)
 # 开始计算总的网络延迟

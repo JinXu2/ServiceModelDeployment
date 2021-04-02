@@ -1,20 +1,14 @@
 from mimetypes import init
-
 import pandas as pd
 import openpyxl
 import random
 import numpy as np
 
-
-class Service:
-    '服务模块'
-
-    def __init__(self, cost, type, rank):
-        self.cost = cost
-        self.type = type
-        self.rank = rank
-
-
+from Service import Service
+from Application import Application
+from User import User
+from EdgeServer import Edge
+from Node import Node
 # # 生成各类服务模块
 # s1 = Service(10, "start1", 6)
 # s2 = Service(10, "start2", 8)
@@ -37,72 +31,52 @@ class Service:
 # s19 = Service(20, "Social", 17)
 # s20 = Service(15, "Other", 20)
 # # 服务模块对象数组
-# servicelist = [s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20]
+# service_list = [s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20]
 #
 #
 # # 根据区域划分+应用需求度情况 生成每个用户对于不同应用的请求频率
 #
 #
-class Application:
-    '应用'
-
-    def __init__(self, no, services):
-        self.no = no
-        self.services = services
-
 
 # 生成应用
-# a1 = Application(1, ['1', '13', '14', '15', '7'])
-a1 = Application(1, ['1', '2', '3', '4'])
+a0 = Application(0,[])
+a1 = Application(1, ['1', '13', '14', '15', '7'])
+# a1 = Application(1, ['1', '2', '3', '4'])
 a2 = Application(2, ['2', '14', '16', '17', '8'])
-a3 = Application(3, ['s3', 's14', 's16', 's20', 's9'])
-a4 = Application(4, ['s4', 's13', 's14', 's17', 's10'])
-a5 = Application(5, ['s5', 's13', 's15', 's18', 's11'])
-a6 = Application(6, ['s6', 's14', 's16', 's19', 's12'])
+a3 = Application(3, ['3', '14', '16', '20', '9'])
+a4 = Application(4, ['4', '13', '14', '17', '10'])
+a5 = Application(5, ['5', '13', '15', '18', '11'])
+a6 = Application(6, ['6', '14', '16', '19', '12'])
 
-app_list = [a1, a2, a3, a4, a5, a6]
+app_list = [a0, a1, a2, a3, a4, a5, a6]
 
 '服务器'
 
 
 # 边缘服务器 还是40个吧 但是注意异构一下 即每个ES能接受的模块个数不同
-class Edge:
-    def __init__(self, no, latitude, longitude, capacity):
-        self.no = no
-        self.latitude = latitude
-        self.longitude = longitude
-        self.capacity = capacity
-
 
 # 创建服务器对象列表
-
+edge_data = pd.read_excel('数据处理/data_sheets.xlsx', sheet_name='edge_data1')
 edge_list = []
 for i in range(40):
     temp = edge_data.loc[i].values[0:-1]
-    temp_edge = Edge(i, temp[0], temp[1], temp[2])
+    temp_edge = Edge(i+1, temp[0], temp[1], temp[2])
     edge_list.append(temp_edge)
 
 '用户'
 
 
 # 保存的应该是用户对于应用的请求频率？
-class User:
-    def __init__(self, no, latitude, longitude, area, request):
-        self.area = area
-        self.no = no
-        self.latitude = latitude
-        self.longitude = longitude
-        self.request = request
 
 
 user_data = pd.read_excel('数据处理/data_sheets.xlsx', sheet_name='user_data2')
 user_list = []
 for i in range(len(user_data)):
     temp = user_data.loc[i].values[0:10]
-    temp_user = User(i, temp[1], temp[2], temp[3], temp[4:])
+    temp_user = User(i+1, temp[1], temp[2], temp[3], temp[4:])
     user_list.append(temp_user)
 
-print(user_list[3].request)
+
 
 '''
 适应函数 计算网络延迟和传输成本的
@@ -112,24 +86,6 @@ plan: 二维数组，每个边缘服务器部署的模块
 '''
 
 
-class Node:
-    def __init__(self, no, latitude, longitude, type, edge_no):
-        '''
-        :param no: 在所有冗余部署的模块中的 独有的编号
-        :param latitude: 纬度
-        :param longitude: 经度
-        :param type: 服务编号
-        :param edge_no: 所属服务器编号
-        '''
-        self.no = no
-        self.latitude = latitude
-        self.longitude = longitude
-        self.type = type
-        self.edge_no = edge_no
-
-    def __str__(self):
-        return 'type: %s  edge_no: %s' % (self.type, self.edge_no)
-
 
 class Point:
     def __init__(self, node):
@@ -137,42 +93,45 @@ class Point:
         self.next = None
 
 
+
+
+
 def CreateDAG(plan, no, edge_list):
-    '''
+    """
 
     :param plan: 二维数组，每个边缘服务器上部署的模块
-    :param no: 应用编号
+    :param no: 应用编号 从1开始的输入的是
     :param edge_list: 边缘服务器列表
     :return: 有重复模块的该应用的DAG图
-    '''
+    """
     # 建立哈希表，服务类型：[节点]
-    service_dict = [[] for i in range(20)]
+    service_dict = [[] for k in range(21)]
 
     # 建立列表，模块：
-    node_list = []
-    node_list.append("null")
+    node_list = ["null"]
     # 根据plan情况 先构造所有节点 并存入对应的哈希表中
     index = 1
     for i in range(len(plan)):
         for j in range(len(plan[i])):
-            node = Node(index, edge_list[i].latitude, edge_list[i].longitude, plan[i][j], i)
+            node = Node(index, edge_list[i].latitude, edge_list[i].longitude, plan[i][j], edge_list[i].no)
             node_list.append(node)
             service_dict[plan[i][j]].append(node)
             index += 1
+    # 实际上有index-1个模块被部署了
+    for i in range(len(service_dict)):
+        for j in range(len(service_dict[i])):
+            print(service_dict[i][j])
 
-    # for i in range(len(service_dict)):
-    #     for j in range(len(service_dict[i])):
-    #         print(service_dict[i][j])
 
-    # if no == 1:
     # 1 13 14 15 7 建一个属于该应用1的DAG图 1 2 3 4  app_list[no].services =  [1,13,14,15,7]
-    # count = 0
-    # for i in range(5):
-    #     count += len(service_dict[app_list[no][i]])
+    if no == 1:
+        count = 0
+    for i in range(5):
+        count += len(service_dict[app_list[no][i]])
 
-    # next = 1
+    next = 1
     # 建立邻接表 93个节点
-    graph = [[] for i in range(94)]
+    graph = [[] for i in range(270)]
     # print(type(graph[0]))
     services_len = len(app_list[no - 1].services)
     # services =
@@ -181,6 +140,8 @@ def CreateDAG(plan, no, edge_list):
         for node in nodes:
             index = node.no
             point = None
+            # print(app_list[no-1].services)
+            # print(app_list[no - 1].services[i+1])
             nodes_next = service_dict[int(app_list[no - 1].services[i + 1])]
             for node_next in nodes_next:
                 graph[index].append(node_next)
@@ -192,10 +153,12 @@ def CreateDAG(plan, no, edge_list):
             print(point.no, end='->')
         print()
 
-    edges = [[] for i in range(94)]
-    for i in range(94):
-        edges[i] = [-1 for j in range(94)]
-    for i in range(94):
+    # 建权值矩阵
+
+    edges = [[] for i in range(270)]
+    for i in range(270):
+        edges[i] = [-1 for j in range(270)]
+    for i in range(270):
         nodes = graph[i]
         if len(nodes) != 0:
             head = node_list[i]
@@ -245,7 +208,7 @@ def CreateDAG(plan, no, edge_list):
                     q.put(tmp)
     # print(q.queue)
     res = q.get()
-    while q.empty() == False:
+    while not q.empty():
         top = q.get()
         if res[1] > top[1]:
             res = top
@@ -253,23 +216,23 @@ def CreateDAG(plan, no, edge_list):
 
 
 def Distance(user, request, DAG):
-    '''
+    """
 
     :param user: 用户的地理位置
     :param request: 用户对于当前应用的请求频率
     :param DAG: 当前应用的DAG示意图
-    :return: 
-    '''
+    :return:
+    """
     return
 
 
 def Fitness(user_list, plan):
-    '''
+    """
 
     :param user_list: 用户列表，用户地理位置，以及对各个应用的请求频率
     :param plan: 部署方案 二维数组，每个边缘服务器上部署的模块
     :return:
-    '''
+    """
 
     # 首先生成每个应用的DAG图
     DAG = []
@@ -286,5 +249,8 @@ def Fitness(user_list, plan):
 
 
 if __name__ == '__main__':
-    plan = [[1, 2], [2, 3], [3, 4], [2, 4]]
-    CreateDAG(plan, 1, edge_list)
+    plan = [[2, 8, 16, 17], [1, 3], [1, 3, 4, 12, 16, 19], [2, 6, 7, 8, 9, 12, 14], [5, 11], [1, 2, 3, 6, 7], [1, 3, 4, 6, 9], [1, 3], [1, 2, 3, 8], [15], [4, 5, 6, 7, 9, 11, 14], [5, 15, 18], [2, 8], [2, 8, 12, 19, 20], [2, 10, 16, 17, 19, 20, 20], [5], [5, 8, 9, 14, 17], [], [], [4], [10, 13, 13, 15], [4, 10, 13], [], [16], [], [1, 3, 16], [1, 3], [], [], [11, 18], [13, 17], [6, 7, 9, 14, 15, 17], [1, 3], [6, 7, 9, 14], [5, 11, 18], [4], [], [], [], [4, 13, 15]]
+
+    for i in range(1, 7):
+        print(i)
+        CreateDAG(plan, i, edge_list)

@@ -10,12 +10,16 @@ from EdgeServer import Edge
 from Node import Node
 from queue import Queue
 import copy
+import sys
+from Logger import Logger
+
+sys.stdout = Logger('E:\ServiceModelDeployment\latencyResult.txt')  # 调用print时相当于Logger().write()
 
 '''
 网络延迟DAG 跟之前不同的地方在于
 1.添加最后的用户节点  完成
 2.RTT算法 5+0.02*distance 
-3.用户上传和下载的 latency要重新定义的 要考虑datasize  但这样就不对 那岂不是用户的位置都不用考虑了啊 把两个都写上去好了
+3.用户上传和下载的 latency要重新定义的 要考虑datasize  但这样就不对 那岂不是用户的位置都不用考虑了啊 把两个都写上去好了 已解决 Latency不考虑数据量大小
 
 
 '''
@@ -24,6 +28,7 @@ transmission_rate = 300000000
 
 bandwidth = 2500  # kb/s 2.5m/s
 app_data = [0, 10, 20, 5, 15, 5, 15]
+app_data_1 = app_data
 
 # 是不是没有加请求频率啊
 
@@ -80,6 +85,11 @@ class DAG:
     def BFS(self, user, service_no):
         q = Queue(maxsize=0)
         # 先要把用户也创建成一个node 创不创也无所谓的 在i=0的时候初始化了的
+
+        # service_no 实际上是app_no 是从1开始的
+
+        request = user.request[service_no - 1]
+        # print("当前用户" + str(user.no) + "对应用" + str(service_no) + "的请求频率是" + str(request))
         user_node = Node(-1, user.latitude, user.longitude, -1, -1)
 
         for i in range(len(self.app_list[service_no].services)):
@@ -132,6 +142,9 @@ class DAG:
         #     print(manul)
         # print("当前用户最短路径是")
         # print(res[0])
+
+        # 在这边加上用户请求频率
+        res[1] *= request
         return res
 
     def sBFS(self, user_list, app_no):
@@ -160,14 +173,16 @@ class DAG:
             proportion = path_sum * gauge / transmission_rate * 1000
             print(proportion)
 
-            # 这里加上上传和下载的延迟
-            down = app_data[i] / bandwidth * user_len
-            up = app_data[i] / bandwidth * user_len
+            # 这里加上上传和下载的延迟 还要乘用户集合对于这个应用的总请求频率
+            down = app_data[i] / bandwidth * request_sum[i]
+            up = app_data_1[i] / bandwidth * request_sum[i]
             print("应用" + str(i) + "的总发送延迟是")
             print(down + up)
 
             print("总网络延迟为")
             print(proportion + down + up)
+            print("平均网络延迟是")
+            print((proportion + down + up)/request_sum[i])
 
             proportion_total += proportion
             transmission_total += down + up
@@ -195,9 +210,17 @@ app_list = [a0, a1, a2, a3, a4, a5, a6]
 
 user_data = pd.read_excel('数据处理/data_sheets.xlsx', sheet_name='user_data2')
 user_list = []
+request_num = user_data.iloc[:, 5:11]
+request_sum = [0]
+for i in range(6):
+    request_sum.append(request_num.iloc[:, i].sum())
+
+# print(request_sum)
+
+# 虽然这边做错了 但是对结果无影响 因为本来就忘记算请求频率进去了。。。已修改
 for i in range(len(user_data)):
-    temp = user_data.loc[i].values[0:10]
-    temp_user = User(i + 1, temp[1], temp[2], temp[3], temp[4:])
+    temp = user_data.loc[i].values[0:11]
+    temp_user = User(i + 1, temp[1], temp[2], temp[3], temp[5:])
     user_list.append(temp_user)
 
 if __name__ == '__main__':
@@ -275,45 +298,45 @@ if __name__ == '__main__':
               [9, -1, -1, -1, -1, -1], [5, 9, 11, 13, 18, -1, -1], [4, 10, 14, 17, -1, -1], [14, 20, -1, -1, -1, -1],
               [15, 18, -1, -1, -1], [5, 11, 13, 18, -1, -1, -1], [2, 8, 14, 17, -1, -1, -1]]
 
-    # test_one = DAG(plan=planCR, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入完全随机CR算法")
-    # p_total, t_total = test_one.run(user_list=user_list)
-    # print("CR总传播网络延迟")
-    # print(p_total)
-    # print("CR总传输网络延迟")
-    # print(t_total)
-    #
-    # test_two = DAG(plan=planAR, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入平均随机AR算法")
-    # p_total, t_total = test_two.run(user_list=user_list)
-    # print("AR总传播网络延迟")
-    # print(p_total)
-    # print("AR总传输网络延迟")
-    # print(t_total)
-    #
-    # test_three = DAG(plan=planMRF, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入最大请求优先MRF算法")
-    # p_total, t_total = test_three.run(user_list=user_list)
-    # print("MRF总传播网络延迟")
-    # print(p_total)
-    # print("MRF总传输网络延迟")
-    # print(t_total)
-    #
-    # test_four = DAG(plan=planMLF, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入最小延迟优先MLF算法")
-    # p_total, t_total = test_four.run(user_list=user_list)
-    # print("MLF总传播网络延迟")
-    # print(p_total)
-    # print("MLF总传输网络延迟")
-    # print(t_total)
-    #
-    # test_five = DAG(plan=planLB, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入负载均衡LB算法")
-    # p_total, t_total = test_five.run(user_list=user_list)
-    # print("LB总传播网络延迟")
-    # print(p_total)
-    # print("LB总传输网络延迟")
-    # print(t_total)
+    test_one = DAG(plan=planCR, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入完全随机CR算法")
+    p_total, t_total = test_one.run(user_list=user_list)
+    print("CR总传播网络延迟")
+    print(p_total)
+    print("CR总传输网络延迟")
+    print(t_total)
+
+    test_two = DAG(plan=planAR, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入平均随机AR算法")
+    p_total, t_total = test_two.run(user_list=user_list)
+    print("AR总传播网络延迟")
+    print(p_total)
+    print("AR总传输网络延迟")
+    print(t_total)
+
+    test_three = DAG(plan=planMRF, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入最大请求优先MRF算法")
+    p_total, t_total = test_three.run(user_list=user_list)
+    print("MRF总传播网络延迟")
+    print(p_total)
+    print("MRF总传输网络延迟")
+    print(t_total)
+
+    test_four = DAG(plan=planMLF, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入最小延迟优先MLF算法")
+    p_total, t_total = test_four.run(user_list=user_list)
+    print("MLF总传播网络延迟")
+    print(p_total)
+    print("MLF总传输网络延迟")
+    print(t_total)
+
+    test_five = DAG(plan=planLB, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入负载均衡LB算法")
+    p_total, t_total = test_five.run(user_list=user_list)
+    print("LB总传播网络延迟")
+    print(p_total)
+    print("LB总传输网络延迟")
+    print(t_total)
 
     test_six = DAG(plan=planGA, service_type_sum=20, edge_list=edge_list, app_list=app_list)
     print("进入遗传最优算法")

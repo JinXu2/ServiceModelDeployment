@@ -10,7 +10,7 @@ from EdgeServer import Edge
 from Node import Node
 from queue import Queue
 import copy
-
+import sys
 '''
 传输成本costDAG 
 cost = datasize * distance* rho
@@ -23,6 +23,9 @@ cost = datasize * distance* rho
 
 
 '''
+from Logger import Logger
+
+sys.stdout = Logger('E:\ServiceModelDeployment\costResult.txt')
 
 app_data_unchanged = [0, 10, 20, 5, 15, 5, 15]
 
@@ -89,6 +92,7 @@ class DAG:
 
         da = app_data[service_no]
         da_1 = app_data_1[service_no]
+        request = user.request[service_no - 1]
 
         user_node = Node(-1, user.latitude, user.longitude, -1, -1)
 
@@ -142,6 +146,9 @@ class DAG:
         #     print(manul)
         # print("当前用户最短路径是")
         # print(res[0])
+
+        # 在这边加上用户请求频率
+        res[1] *= request
         return res
 
     def sBFS(self, user_list, service_no):
@@ -162,6 +169,8 @@ class DAG:
             print("应用" + str(i) + "的总传输成本是")
             path_sum = self.sBFS(user_list, i)
             print(path_sum)
+            print("应用" + str(i) + "的平均传输成本是")
+            print(path_sum/request_sum[i])
             total += path_sum
         # print(total)
         return total
@@ -187,9 +196,16 @@ app_list = [a0, a1, a2, a3, a4, a5, a6]
 
 user_data = pd.read_excel('数据处理/data_sheets.xlsx', sheet_name='user_data2')
 user_list = []
+
+# 添加请求频率
+request_num = user_data.iloc[:, 5:11]
+request_sum = [0]
+for i in range(6):
+    request_sum.append(request_num.iloc[:, i].sum())
+
 for i in range(len(user_data)):
-    temp = user_data.loc[i].values[0:10]
-    temp_user = User(i + 1, temp[1], temp[2], temp[3], temp[4:])
+    temp = user_data.loc[i].values[0:11]
+    temp_user = User(i + 1, temp[1], temp[2], temp[3], temp[5:])
     user_list.append(temp_user)
 
 if __name__ == '__main__':
@@ -267,121 +283,121 @@ if __name__ == '__main__':
               [9, -1, -1, -1, -1, -1], [5, 9, 11, 13, 18, -1, -1], [4, 10, 14, 17, -1, -1], [14, 20, -1, -1, -1, -1],
               [15, 18, -1, -1, -1], [5, 11, 13, 18, -1, -1, -1], [2, 8, 14, 17, -1, -1, -1]]
 
-    # print("———————————————————正常情况———————————————————————")
-    # test_one = DAG(plan=planCR, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入完全随机CR算法")
-    # c_total_1 = test_one.run(user_list=user_list)
-    # print("CR总传输成本")
-    # print(c_total_1)
-    #
-    # test_two = DAG(plan=planAR, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入平均随机AR算法")
-    # c_total_2 = test_two.run(user_list=user_list)
-    # print("AR总传播成本")
-    # print(c_total_2)
-    #
-    # test_three = DAG(plan=planMRF, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入最大请求优先MRF算法")
-    # c_total_3 = test_three.run(user_list=user_list)
-    # print("MRF总传播成本")
-    # print(c_total_3)
-    #
-    # test_four = DAG(plan=planMLF, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # c_total_4 = test_four.run(user_list=user_list)
-    # print("MLF总传播成本")
-    # print(c_total_4)
-    #
-    # test_five = DAG(plan=planLB, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入负载均衡LB算法")
-    # c_total_5 = test_five.run(user_list=user_list)
-    # print("LB总传播成本")
-    # print(c_total_5)
-    #
-    # test_six = DAG(plan=planGA, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入遗传GA算法")
-    # c_total_6 = test_six.run(user_list=user_list)
-    # print("GA总传播成本")
-    # print(c_total_6)
-    #
-    # print("———————————————————传入成本等比增大———————————————————————")
-    # #  那就c_total 等比增大就好
-    # print("等比增大就好")
-    #
-    # print("———————————————————传出成本等比增大———————————————————————")
-    # # 那要重新运行的 改变 app_data_1开始
-    # app_data_1 = [i * 2 for i in app_data_1]
-    # print("输出数据*2")
-    # test_one = DAG(plan=planCR, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入完全随机CR算法")
-    # c_total_1 = test_one.run(user_list=user_list)
-    # print("CR总传输成本")
-    # print(c_total_1)
-    #
-    # test_two = DAG(plan=planAR, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入平均随机AR算法")
-    # c_total_2 = test_two.run(user_list=user_list)
-    # print("AR总传播成本")
-    # print(c_total_2)
-    #
-    # test_three = DAG(plan=planMRF, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入最大请求优先MRF算法")
-    # c_total_3 = test_three.run(user_list=user_list)
-    # print("MRF总传播成本")
-    # print(c_total_3)
-    #
-    # test_four = DAG(plan=planMLF, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # c_total_4 = test_four.run(user_list=user_list)
-    # print("MLF总传播成本")
-    # print(c_total_4)
-    #
-    # test_five = DAG(plan=planLB, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入负载均衡LB算法")
-    # c_total_5 = test_five.run(user_list=user_list)
-    # print("LB总传播成本")
-    # print(c_total_5)
-    #
-    # test_six = DAG(plan=planGA, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入遗传GA算法")
-    # c_total_6 = test_six.run(user_list=user_list)
-    # print("GA总传播成本")
-    # print(c_total_6)
-    #
-    # app_data_1 = [i * 4 for i in app_data_1]
-    # print("输出数据*4")
-    # test_one = DAG(plan=planCR, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入完全随机CR算法")
-    # c_total_1 = test_one.run(user_list=user_list)
-    # print("CR总传输成本")
-    # print(c_total_1)
-    #
-    # test_two = DAG(plan=planAR, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入平均随机AR算法")
-    # c_total_2 = test_two.run(user_list=user_list)
-    # print("AR总传播成本")
-    # print(c_total_2)
-    #
-    # test_three = DAG(plan=planMRF, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入最大请求优先MRF算法")
-    # c_total_3 = test_three.run(user_list=user_list)
-    # print("MRF总传播成本")
-    # print(c_total_3)
-    #
-    # test_four = DAG(plan=planMLF, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # c_total_4 = test_four.run(user_list=user_list)
-    # print("MLF总传播成本")
-    # print(c_total_4)
-    #
-    # test_five = DAG(plan=planLB, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入负载均衡LB算法")
-    # c_total_5 = test_five.run(user_list=user_list)
-    # print("LB总传播成本")
-    # print(c_total_5)
-    #
-    # test_six = DAG(plan=planGA, service_type_sum=20, edge_list=edge_list, app_list=app_list)
-    # print("进入遗传GA算法")
-    # c_total_6 = test_six.run(user_list=user_list)
-    # print("GA总传播成本")
-    # print(c_total_6)
+    print("———————————————————正常情况———————————————————————")
+    test_one = DAG(plan=planCR, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入完全随机CR算法")
+    c_total_1 = test_one.run(user_list=user_list)
+    print("CR总传输成本")
+    print(c_total_1)
+
+    test_two = DAG(plan=planAR, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入平均随机AR算法")
+    c_total_2 = test_two.run(user_list=user_list)
+    print("AR总传播成本")
+    print(c_total_2)
+
+    test_three = DAG(plan=planMRF, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入最大请求优先MRF算法")
+    c_total_3 = test_three.run(user_list=user_list)
+    print("MRF总传播成本")
+    print(c_total_3)
+
+    test_four = DAG(plan=planMLF, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    c_total_4 = test_four.run(user_list=user_list)
+    print("MLF总传播成本")
+    print(c_total_4)
+
+    test_five = DAG(plan=planLB, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入负载均衡LB算法")
+    c_total_5 = test_five.run(user_list=user_list)
+    print("LB总传播成本")
+    print(c_total_5)
+
+    test_six = DAG(plan=planGA, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入遗传GA算法")
+    c_total_6 = test_six.run(user_list=user_list)
+    print("GA总传播成本")
+    print(c_total_6)
+
+    print("———————————————————传入成本等比增大———————————————————————")
+    #  那就c_total 等比增大就好
+    print("等比增大就好")
+
+    print("———————————————————传出成本等比增大———————————————————————")
+    # 那要重新运行的 改变 app_data_1开始
+    app_data_1 = [i * 2 for i in app_data_1]
+    print("输出数据*2")
+    test_one = DAG(plan=planCR, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入完全随机CR算法")
+    c_total_1 = test_one.run(user_list=user_list)
+    print("CR总传输成本")
+    print(c_total_1)
+
+    test_two = DAG(plan=planAR, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入平均随机AR算法")
+    c_total_2 = test_two.run(user_list=user_list)
+    print("AR总传播成本")
+    print(c_total_2)
+
+    test_three = DAG(plan=planMRF, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入最大请求优先MRF算法")
+    c_total_3 = test_three.run(user_list=user_list)
+    print("MRF总传播成本")
+    print(c_total_3)
+
+    test_four = DAG(plan=planMLF, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    c_total_4 = test_four.run(user_list=user_list)
+    print("MLF总传播成本")
+    print(c_total_4)
+
+    test_five = DAG(plan=planLB, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入负载均衡LB算法")
+    c_total_5 = test_five.run(user_list=user_list)
+    print("LB总传播成本")
+    print(c_total_5)
+
+    test_six = DAG(plan=planGA, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入遗传GA算法")
+    c_total_6 = test_six.run(user_list=user_list)
+    print("GA总传播成本")
+    print(c_total_6)
+
+    app_data_1 = [i * 4 for i in app_data_1]
+    print("输出数据*4")
+    test_one = DAG(plan=planCR, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入完全随机CR算法")
+    c_total_1 = test_one.run(user_list=user_list)
+    print("CR总传输成本")
+    print(c_total_1)
+
+    test_two = DAG(plan=planAR, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入平均随机AR算法")
+    c_total_2 = test_two.run(user_list=user_list)
+    print("AR总传播成本")
+    print(c_total_2)
+
+    test_three = DAG(plan=planMRF, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入最大请求优先MRF算法")
+    c_total_3 = test_three.run(user_list=user_list)
+    print("MRF总传播成本")
+    print(c_total_3)
+
+    test_four = DAG(plan=planMLF, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    c_total_4 = test_four.run(user_list=user_list)
+    print("MLF总传播成本")
+    print(c_total_4)
+
+    test_five = DAG(plan=planLB, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入负载均衡LB算法")
+    c_total_5 = test_five.run(user_list=user_list)
+    print("LB总传播成本")
+    print(c_total_5)
+
+    test_six = DAG(plan=planGA, service_type_sum=20, edge_list=edge_list, app_list=app_list)
+    print("进入遗传GA算法")
+    c_total_6 = test_six.run(user_list=user_list)
+    print("GA总传播成本")
+    print(c_total_6)
 
     app_data_1 = [i / 2 for i in app_data_unchanged]
     print("输出数据/2")

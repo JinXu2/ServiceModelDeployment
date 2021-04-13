@@ -88,6 +88,17 @@ class DAG:
                         tmp[1] += self.weight[last][node.no]
                         tmp[0].append(node.no)
                         q.put(tmp)
+        # 在这里加上最后用户的信息
+        size = q.qsize()
+        for j in range(size):
+            top = q.get()
+            last = top[0][-1]
+            node = self.node_list[last]
+            tmp = copy.deepcopy(top)
+            tmp[1] += (abs(user_node.latitude - node.latitude)
+                       + abs(user_node.longitude - node.longitude))
+            tmp[0].append(-1)
+            q.put(tmp)
 
         res = q.get()
         while not q.empty():

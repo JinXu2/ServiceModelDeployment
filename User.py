@@ -6,3 +6,9 @@ class User:
         self.longitude = longitude
         self.request = request
 
+from Logger import Logger
+import sys
+sys.stdout = Logger('E:\ServiceModelDeployment\est.txt')
+if __name__ == '__main__':
+    for i in range(2000):
+        print(i)

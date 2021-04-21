@@ -56,8 +56,8 @@ N_GENERATIONS = 20
 
 import sys
 
-
 # sys.stdout = open('record.txt', mode='w', encoding='utf-8')
+
 
 
 def F(plans):
@@ -100,11 +100,13 @@ def decode(pop):
         new_list = []
         idx = 0
         for i in range(len(capacity)):
-            tmp = list_i[idx:idx + capacity[i]]
+            tmp = list_i[idx:(idx + int(capacity[i]))]
             new_list.append(tmp)
-            idx = idx + capacity[i]
+            idx = idx + int(capacity[i])
         plan.append(new_list)
     return plan
+
+
 
 
 def get_fitness(pop):  # pop 是一堆plan 所以是个三维 但是要基因操作所以得是二维的
@@ -112,6 +114,7 @@ def get_fitness(pop):  # pop 是一堆plan 所以是个三维 但是要基因操
     predict = F(plan_group)
     return predict
     # return np.array([1,2,3])
+
 
 def crossover_and_mutation(pop, CROSSOVER_RATE=0.8):
     # 在这里我希望最好的方案 再往更好的情况进行变可以吗 优先变异？？

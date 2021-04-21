@@ -16,3 +16,5 @@ class Node:
     def __str__(self):
         return 'type: %s  edge_no: %s latitude: %s longitude: %s' % (self.type, self.edge_no,self.latitude,self.longitude)
 
+
+

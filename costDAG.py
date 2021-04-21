@@ -10,7 +10,8 @@ from EdgeServer import Edge
 from Node import Node
 from queue import Queue
 import copy
-import sys
+
+
 '''
 传输成本costDAG 
 cost = datasize * distance* rho
@@ -24,8 +25,8 @@ cost = datasize * distance* rho
 
 '''
 from Logger import Logger
-
-sys.stdout = Logger('E:\ServiceModelDeployment\costResult.txt')
+import sys
+sys.stdout = Logger('E:\ServiceModelDeployment\cost.txt')
 
 app_data_unchanged = [0, 10, 20, 5, 15, 5, 15]
 
@@ -170,7 +171,7 @@ class DAG:
             path_sum = self.sBFS(user_list, i)
             print(path_sum)
             print("应用" + str(i) + "的平均传输成本是")
-            print(path_sum/request_sum[i])
+            print(path_sum / request_sum[i])
             total += path_sum
         # print(total)
         return total
@@ -282,7 +283,7 @@ if __name__ == '__main__':
               [17, -1, -1, -1, -1, -1, -1, -1], [1, 3, 6, 8, 12, 19], [3, -1, -1, -1, -1, -1, -1],
               [9, -1, -1, -1, -1, -1], [5, 9, 11, 13, 18, -1, -1], [4, 10, 14, 17, -1, -1], [14, 20, -1, -1, -1, -1],
               [15, 18, -1, -1, -1], [5, 11, 13, 18, -1, -1, -1], [2, 8, 14, 17, -1, -1, -1]]
-
+    print("test")
     print("———————————————————正常情况———————————————————————")
     test_one = DAG(plan=planCR, service_type_sum=20, edge_list=edge_list, app_list=app_list)
     print("进入完全随机CR算法")

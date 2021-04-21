@@ -98,9 +98,9 @@ edge_location = edge_data[['index', 'LATITUDE', 'LONGITUDE']].values
 
 
 def ou_distance(x, y):
-    # 定义欧式距离的计算
-    x = x[1:-1]
-    y = y[1:-1]
+    # 定义欧式距离的计算 -1是错误 最后一个元素没算进去
+    x = np.array(x[1:])
+    y = np.array(y[1:])
     return np.sqrt(sum(np.square(x - y)))
 
 

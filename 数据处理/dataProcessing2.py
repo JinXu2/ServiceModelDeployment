@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 
 # 读取处理后的数据源
 user_data = pd.read_excel('data_sheets.xlsx', sheet_name='user_data')
+# user_data = pd.read_csv('users-melbcbd-generated.csv')
 edge_data = pd.read_excel('data_sheets.xlsx', sheet_name='edge_data')
 
 '''
@@ -62,7 +63,7 @@ for index, row in user_data.iterrows():
     else:
         plt.scatter(row['Latitude'], row['Longitude'], color='black')
 
-plt.savefig('User&ES Distribution2.png')
+plt.savefig('User&ES Distribution22.png')
 plt.show()
 
 user_data = pd.read_excel('data_sheets.xlsx', sheet_name='user_data1')

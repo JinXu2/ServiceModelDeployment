@@ -15,7 +15,7 @@ import copy
 from sklearn.cluster import AffinityPropagation
 
 '''
-设定原始数据
+设定原始数据 从data.xlsx读取想要的数据
 '''
 # 设置应用列表
 a0 = Application(0, [])
@@ -28,22 +28,33 @@ a6 = Application(6, ['6', '14', '16', '19', '12'])
 app_list = [a0, a1, a2, a3, a4, a5, a6]
 
 # 根据U设置用户列表
-U = 273
-user_data = pd.read_excel('数据处理/data_sheets.xlsx', sheet_name='user_data2')
+U = 300
+user_data = pd.read_excel('data.xlsx', sheet_name='user_data')
+# 读取的时候表头是不读的 没事 反正用户量远远大于实验数据量要求
+print(len(user_data))
 user_data = user_data.sample(n=U, random_state=None, replace=True)
+
+
+user_data.index = range(len(user_data))
+print(user_data)
 user_list = []
+for row in user_data.values:
+    print(row)
+
 for i in range(U):
     temp = user_data.loc[i].values[0:10]
+    print(temp)
     temp_user = User(i + 1, temp[1], temp[2], temp[3], temp[4:])
     user_list.append(temp_user)
 
 # 根据E设置服务器列表
 E = 40
-edge_data = pd.read_excel('数据处理/data_sheets.xlsx', sheet_name='edge_data1')
+edge_data = pd.read_excel('data.xlsx', sheet_name='edge_data')
 edge_data = edge_data.sample(n=E, random_state=None, replace=True)
 edge_list = []
-for i in range(40):
+for i in range(E):
     temp = edge_data.loc[i].values[0:-1]
+    print(temp)
     temp_edge = Edge(no=i + 1, latitude=temp[1], longitude=temp[2], capacity=temp[3])
     edge_list.append(temp_edge)
 

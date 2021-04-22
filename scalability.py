@@ -13,6 +13,7 @@ from Node import Node
 from queue import Queue
 import copy
 from sklearn.cluster import AffinityPropagation
+from KM import KMediod
 
 '''
 设定原始数据 从data.xlsx读取想要的数据
@@ -27,107 +28,90 @@ a5 = Application(5, ['5', '13', '15', '18', '11'])
 a6 = Application(6, ['6', '14', '16', '19', '12'])
 app_list = [a0, a1, a2, a3, a4, a5, a6]
 
-# 根据U设置用户列表
-U = 300
-user_data = pd.read_excel('data.xlsx', sheet_name='user_data')
-# 读取的时候表头是不读的 没事 反正用户量远远大于实验数据量要求
-print(len(user_data))
-user_data = user_data.sample(n=U, random_state=None, replace=True)
-
-
-user_data.index = range(len(user_data))
-print(user_data)
-user_list = []
-for row in user_data.values:
-    print(row)
-
-for i in range(U):
-    temp = user_data.loc[i].values[0:10]
-    print(temp)
-    temp_user = User(i + 1, temp[1], temp[2], temp[3], temp[4:])
-    user_list.append(temp_user)
-
-# 根据E设置服务器列表
-E = 40
-edge_data = pd.read_excel('data.xlsx', sheet_name='edge_data')
-edge_data = edge_data.sample(n=E, random_state=None, replace=True)
-edge_list = []
-for i in range(E):
-    temp = edge_data.loc[i].values[0:-1]
-    print(temp)
-    temp_edge = Edge(no=i + 1, latitude=temp[1], longitude=temp[2], capacity=temp[3])
-    edge_list.append(temp_edge)
-
+# 关于模块和成本
 budget = 2000  # 不变的
 price = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 50, 30, 20, 20, 40, 20, 20, 15]
+
+# 选择用户数据
+U = input("请选择用户数据表")
+sheet_name = "user_data" + U
+user_data = pd.read_excel('data.xlsx', sheet_name=sheet_name)
+
+# 选择边缘服务器数据
+E = input("请选择边缘服务器数据表")
+sheet_name = "edge_data" + E
+edge_data = pd.read_excel('data.xlsx', sheet_name=sheet_name)
 capacity = edge_data['capacity'].to_list()  # 这个可以直接获取
-edge_location = edge_data[['index', 'LATITUDE', 'LONGITUDE']].values
+edge_location = edge_data[['id', 'LATITUDE', 'LONGITUDE']].values
 
 '''
-对用户请求进行 模块总和 和聚类计算 离散度计算 获取每个模块的优先级
+对用户请求进行 模块请求总和 和AP聚类计算 离散度计算 获取每个模块的优先级
 '''
-cluster_result = []
-sd_result = []
-request_sum = []
+cluster_result = []  # 存放AP数
+sd_result = []  # 存放离散度
+request_sum = []  # 存在请求总和
+service_weight = []  # 模块权值 上述三者之和
+
+
 # AP聚类、请求频率总和 和离散度计算
-for i in range(1, 21):
-    print("当前处理模块", i)
-    coloumn = 's' + str(i)
-    # 读取对应列数的数据
-    data = user_data[['Latitude', 'Longitude', coloumn]]
-    mean = data[coloumn].mean()
-    # 请求总和
-    request_sum.append(data[coloumn].sum())
+def service_rank():
+    for i in range(1, 21):
+        # 进行AP聚类和离散度计算
+        coloumn = 's' + str(i)
+        # 读取对应列数的数据
+        data = user_data[['Latitude', 'Longitude', coloumn]]
+        mean = data[coloumn].mean()
+        # 请求总和
+        request_sum.append(data[coloumn].sum())
 
-    print("平均值为", mean)
-    # 对数据进行筛选 只有超过 平均值 才参与聚类 否则不参与
-    selected_data = data[(data[coloumn] > mean)]
-    selected_num = len(selected_data)
-    print("筛选后数据共有", selected_num)
-    data = data[(data[coloumn] <= mean)]
+        # 对数据进行筛选 只有超过 平均值 才参与聚类 否则不参与
+        selected_data = data[(data[coloumn] > mean)]
+        selected_num = len(selected_data)
 
-    # 筛选后数据可能为 0
-    if selected_num == 0:
-        sd_result.append(-1)
-        cluster_result.append(0)
-        print("modeul " + coloumn + "无需聚类,筛选后无数据")
-        continue
-    else:
-        # 标准差
-        avg_x = selected_data['Latitude'].mean()
-        avg_y = selected_data['Longitude'].mean()
-
-        sum = 0
-        for j in range(len(selected_data)):
-            sum += pow(abs(selected_data.iloc[j][0] - avg_x) + abs(selected_data.iloc[j][1] - avg_y), 2)
-
-        sd_result.append(pow(sum / (selected_num - 1), 0.5))
-
-        # 进行AP聚类
-        weight = selected_data[coloumn]
-        selected_data = selected_data[['Latitude', 'Longitude']].values
-        '''
-        这个参数总算是调对了！
-        '''
-        p = [x / 10000 * -0.085 for x in weight]
-        ap = AffinityPropagation(damping=0.5, max_iter=5000, convergence_iter=30, preference=p).fit(selected_data)
-
-        # 聚类结果
-        cluster_centers_indices = ap.cluster_centers_indices_
-        if len(cluster_centers_indices) == 0:
+        data = data[(data[coloumn] <= mean)]
+        # 筛选后数据可能为 0
+        if selected_num == 0:
+            sd_result.append(-1)
             cluster_result.append(0)
-            print("module " + coloumn + "无法收敛")
+
             continue
         else:
-            cluster_result.append(len(cluster_centers_indices))
+            # 标准差
+            avg_x = selected_data['Latitude'].mean()
+            avg_y = selected_data['Longitude'].mean()
+            sum = 0
+            for j in range(len(selected_data)):
+                sum += pow(abs(selected_data.iloc[j][0] - avg_x) + abs(selected_data.iloc[j][1] - avg_y), 2)
 
-# 优先级计算
+            sd_result.append(pow(sum / (selected_num - 1), 0.5))
 
-# 设定公式 优先级等于前面三者的总和
-weight = []
-for i in range(20):
-    weight.append(cluster_result[i] + request_sum[i] / 1000 * 1.1 + (0 if (sd_result[i] == -1) else sd_result[i] * 100))
+            # 进行AP聚类
+            weight = selected_data[coloumn]
+            selected_data = selected_data[['Latitude', 'Longitude']].values
+            '''
+            这个参数总算是调对了！
+            '''
+            p = [x / 10000 * -0.085 for x in weight]
+            ap = AffinityPropagation(damping=0.5, max_iter=5000, convergence_iter=30, preference=p).fit(selected_data)
 
+            # 聚类结果
+            cluster_centers_indices = ap.cluster_centers_indices_
+            if len(cluster_centers_indices) == 0:
+                cluster_result.append(0)
+
+                continue
+            else:
+                cluster_result.append(len(cluster_centers_indices))
+
+    # 优先级计算
+    # 设定公式 优先级等于前面三者的总和
+    for i in range(20):
+        service_weight.append(float(
+            cluster_result[i] + request_sum[i] / 1000 * 1.1 + (
+                0 if (sd_result[i] == -1) else float(sd_result[i]) * 100)))
+
+
+service_rank()
 # 根据优先级计算 每个模块的rank值 通过建立dataframe来实现
 
 # index列
@@ -135,7 +119,7 @@ index = []
 for i in range(1, 21):
     index.append("s" + str(i))
 c = {'service': index, 'cluster_num': cluster_result, 'request_sum': request_sum, 'sta_dev': sd_result,
-     'weight': weight, 'price': price}
+     'weight': service_weight, 'price': price}
 
 rank_result = pd.DataFrame(c)
 rank_result['rank'] = rank_result['weight'].rank(method="first", ascending=True)
@@ -201,18 +185,61 @@ def allocation(df):
 
 # 获取冗余部署个数结果
 redundancy = allocation(df)
+print("redundancy")
 print(redundancy)
-
-
-'''
-对边缘服务器进行处理 计算分配到它身上的 有重复的话怎么办呢 对于用户而言最近的ES还是没有变的 重复采样的时候Index还是不变的 好像也无所谓？跟index
-这样好了 我的实验一开始的参数变小。。好像也不行
-'''
-
 
 '''
 根据冗余结果 和 边缘服务器的容量情况 进行方案初始化生成
+
+首先找到离到每个用户最近的ES 记录下index
+统计分配该ES上的应用请求之和 和模块请求之和
+
 '''
+
+# 离到每个用户最近的ES 记录下index
+nearest = []
+
+
+def find_nearest():
+    for i in range(len(user_data)):
+        min = 10
+        temp = -1
+        for j in range(len(edge_data)):
+            distance = abs(user_data.iloc[i, 1] - edge_data.iloc[j, 1]) + abs(
+                user_data.iloc[i, 2] - edge_data.iloc[j, 2])
+            if distance < min:
+                temp = j
+                min = distance
+        nearest.append(temp)
+
+
+find_nearest()
+# 把这列加到 user_data中去
+print("nearest")
+user_data['nearest'] = nearest
+
+# 统计分配该ES上的 模块请求之和
+request_sum = np.zeros((len(edge_data), 20))
+
+
+def compute_edge_request():
+    for i in range(len(user_data)):
+        edge_index = user_data.iloc[i][30]
+        for j in range(20):
+            request_sum[edge_index][j] += user_data.iloc[i, j + 10]
+
+
+compute_edge_request()
+request_sum = request_sum.tolist()
+df = pd.DataFrame(request_sum,
+                  columns=['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10', 's11', 's12', 's13', 's14',
+                           's15', 's16', 's17', 's18', 's19', 's20'])
+
+edge_data = pd.concat([edge_data, df], axis=1)
+'''
+生成各种部署方案
+'''
+edge_len = len(edge_data)
 
 
 # 欧式距离函数
@@ -287,6 +314,9 @@ def encode(plan_group):
 
 # GA方案生成
 pop_size = 20
+
+
+# GA 方案生成 相对来说很复杂 而且时间很慢很慢 只能生成初始化的种群
 def ga_plan():
     plan_group = []
     for j in range(pop_size):
@@ -363,13 +393,13 @@ def ga_plan():
 
 # 随机方案生成
 def random_plan():
-    plan = [[] for i in range(40)]
+    plan = [[] for i in range(edge_len)]
 
     for i in range(1, 21):
         j = redundancy[i - 1]
         for k in range(j):
             # 开始生成j个随机数
-            tmp = random.randint(0, 39)
+            tmp = random.randint(0, edge_len - 1)
             # print("要把" + str(i) + "放到服务器", tmp)
             while len(plan[tmp]) > capacity[tmp]:
                 # 超过了所以要变tmp
@@ -378,27 +408,129 @@ def random_plan():
             plan[tmp].append(i)
 
     return plan
+
+
+CR_plan = random_plan()
+print(CR_plan)
 
 
 # 随机平均方案生成
 def avg_random_plan():
     redundancy2 = []
     total = sum(price)
-    n = budget / total
+    n = int(budget / total)
     for i in range(20):
         redundancy2.append(n)
 
-    plan = [[] for i in range(40)]
+    plan = [[] for i in range(edge_len)]
 
     for i in range(1, 21):
         for k in range(n):
             # 开始生成j个随机数
-            tmp = random.randint(0, 39)
+            tmp = random.randint(0, edge_len - 1)
             # print("要把" + str(i) + "放到服务器", tmp)
             while len(plan[tmp]) > capacity[tmp]:
                 # 超过了所以要变tmp
                 # print("超过了")
-                tmp = random.randint(0, 39)
+                tmp = random.randint(0, edge_len - 1)
             plan[tmp].append(i)
 
     return plan
+
+
+AR_plan = avg_random_plan()
+print(AR_plan)
+
+
+# 请求频率优先
+def request_first_plan():
+    # 根据冗余部署模块 和每个ES对于该模块请求频率最大的上面
+    # 根据edge_data
+    plan = [[] for i in range(edge_len)]
+    for i in range(1, 21):
+        need = redundancy[i - 1]
+        # 找到排名前need个且空闲的ES进行部署
+        cur = 's' + str(i)
+        # 这里index 和 id 有很大不同的地方
+        data = edge_data[cur].values
+        index = data.argsort()
+        index = index[::-1]
+        cnt, j = 0, 0
+        # 优先放在排名前面，如果还有空位就放上去，同时count+1
+        while cnt < need:
+            if len(plan[index[j]]) < capacity[index[j]]:
+                plan[index[j]].append(i)
+                cnt += 1
+            j += 1
+    return plan
+
+
+MRF_plan = request_first_plan()
+print(MRF_plan)
+
+
+# 网络延迟最低优先  对于每个模块而言 如果只部署在这个ES上面的话，与其他ES的距离则是所有的网络延迟 再找到排名前R个的 矩阵相乘
+def latency_first_plan():
+    plan = [[] for i in range(edge_len)]
+    # 先建立距离矩阵
+    dis = np.zeros([edge_len, edge_len], dtype=float)
+    for i in range(0, edge_len):
+        for j in range(i, edge_len):
+            temp = ou_distance(edge_location[i], edge_location[j])
+            dis[i][j] = dis[j][i] = temp
+
+    for i in range(1, 21):
+        need = redundancy[i - 1]
+        # 开始创建该模块的请求频率矩阵
+        column = 's' + str(i)
+        df = edge_data[column]
+        request = np.array(df).reshape(edge_len, 1)
+        res = np.dot(dis, request)
+        res = np.array(res).flatten()
+        # 选择排名前need个的位置进行存在
+
+        edge_location2 = np.c_[edge_location, res]
+        # edge_location3 = edge_location2[edge_location2[:, 3].argsort()]
+        # print(edge_location3)
+        index = edge_location2[:, 3].argsort()
+
+        cnt, j = 0, 0
+        # cnt遍历要放的个数 j遍历排名的ES
+        while cnt < need:
+            if len(plan[index[j]]) < capacity[index[j]]:
+                plan[index[j]].append(i)
+                cnt += 1
+            j += 1
+    # print(plan)
+    return plan
+
+
+MLF_plan = latency_first_plan()
+print(MLF_plan)
+
+
+# 负载均衡方案生成
+def load_balance_plan():
+    plan = [[] for i in range(edge_len)]
+    # 那不就是按照顺序 1 2 3 4 的放进去
+    service = []
+    for i in range(20):
+        tmp = redundancy[i]
+        for j in range(tmp):
+            service.append(i + 1)
+    print(service)
+    index = 0
+    j = 0
+    while index < len(service):
+        plan[j].append(service[index])
+        j += 1
+        j %= edge_len
+        index += 1
+    return plan
+
+
+LB_plan = load_balance_plan()
+print(LB_plan)
+
+
+def evaluate(cur_plan, cur_edge, cur_user):

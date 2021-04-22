@@ -14,6 +14,7 @@ from queue import Queue
 import copy
 from sklearn.cluster import AffinityPropagation
 from KM import KMediod
+from LatencyDAG import DAG
 
 '''
 设定原始数据 从data.xlsx读取想要的数据
@@ -410,7 +411,7 @@ def random_plan():
     return plan
 
 
-CR_plan = random_plan()
+CR_plan = translate(random_plan())
 print(CR_plan)
 
 
@@ -438,7 +439,7 @@ def avg_random_plan():
     return plan
 
 
-AR_plan = avg_random_plan()
+AR_plan = translate(avg_random_plan())
 print(AR_plan)
 
 
@@ -465,7 +466,7 @@ def request_first_plan():
     return plan
 
 
-MRF_plan = request_first_plan()
+MRF_plan = translate(request_first_plan())
 print(MRF_plan)
 
 
@@ -505,7 +506,7 @@ def latency_first_plan():
     return plan
 
 
-MLF_plan = latency_first_plan()
+MLF_plan = translate(latency_first_plan())
 print(MLF_plan)
 
 
@@ -518,7 +519,7 @@ def load_balance_plan():
         tmp = redundancy[i]
         for j in range(tmp):
             service.append(i + 1)
-    print(service)
+    # print(service)
     index = 0
     j = 0
     while index < len(service):
@@ -529,8 +530,47 @@ def load_balance_plan():
     return plan
 
 
-LB_plan = load_balance_plan()
+LB_plan = translate(load_balance_plan())
 print(LB_plan)
 
+'''
+进行方案评估
+首先要创建 用户和边缘服务器的对象列表 创建对应的属性，才能在evaluate里面使用
+'''
 
-def evaluate(cur_plan, cur_edge, cur_user):
+#创建服务器列表
+
+edge_list = []
+for i in range(edge_len):
+    temp = edge_data.loc[i].values[0:]
+    temp_edge = Edge(no=temp[0], latitude=temp[1], longitude=temp[2], capacity=temp[3])
+    edge_list.append(temp_edge)
+
+# for edge in edge_list:
+#     print(edge)
+
+# 创建用户列表
+user_list = []
+for i in range(len(user_data)):
+    temp=user_data.loc[i].values[0:]
+    temp_user = User(no=temp[0],latitude=temp[1],longitude=temp[2],area=temp[3],request=temp[4:10])
+    user_list.append(temp_user)
+
+# for user in user_list:
+#     print(user)
+
+# 创建应用的数据集大小
+app_data = [0, 10, 20, 5, 15, 5, 15] # 输入的
+app_data_1 = app_data # 输出的
+
+
+def evaluate_latency(cur_plan, cur_edge, cur_user):
+    test_one = DAG(plan=cur_plan, service_type_sum=20, edge_list=cur_edge, app_list=app_list)
+    print("进入完全随机CR算法")
+    p_total, t_total = test_one.run(user_list=cur_user)
+    print("CR总传播网络延迟")
+    print(p_total)
+    print("CR总传输网络延迟")
+    print(t_total)
+
+evaluate_latency(CR_plan,edge_list,user_list)

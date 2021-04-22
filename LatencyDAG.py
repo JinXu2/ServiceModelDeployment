@@ -32,7 +32,7 @@ app_data_1 = app_data
 
 # 是不是没有加请求频率啊
 
-class DAG:
+class LDAG:
     """
     图的建立
     """
@@ -88,6 +88,7 @@ class DAG:
 
         # service_no 实际上是app_no 是从1开始的
 
+        # request 已经算进去了
         request = user.request[service_no - 1]
         # print("当前用户" + str(user.no) + "对应用" + str(service_no) + "的请求频率是" + str(request))
         user_node = Node(-1, user.latitude, user.longitude, -1, -1)
@@ -166,6 +167,14 @@ class DAG:
         transmission_total = 0
         app_number = len(self.app_list)  # 省略了0的情况的
 
+
+        request_sum = [0 for i in range(7)]
+        for u in user_list:
+            temp = u.request
+            for i in range(6):
+                request_sum[i+1]+=temp[i]
+
+
         for i in range(1, app_number):
             path_sum = self.sBFS(user_list, i)
             # print(path_sum)
@@ -176,14 +185,17 @@ class DAG:
             # 这里加上上传和下载的延迟 还要乘用户集合对于这个应用的总请求频率
             down = app_data[i] / bandwidth * request_sum[i]
             up = app_data_1[i] / bandwidth * request_sum[i]
+
             print("应用" + str(i) + "的总发送延迟是")
             print(down + up)
 
+            # proportion里面已经把请求频率加进去了
             print("总网络延迟为")
             print(proportion + down + up)
             print("平均网络延迟是")
             print((proportion + down + up)/request_sum[i])
-
+            print("总请求频率是")
+            print(request_sum[i])
             proportion_total += proportion
             transmission_total += down + up
         # print(total)
@@ -209,20 +221,20 @@ a6 = Application(6, ['6', '14', '16', '19', '12'])
 app_list = [a0, a1, a2, a3, a4, a5, a6]
 
 # 这边的request_sum 要根据每次传进来的user_list中的request的不同，来修改，而不是放在外面，要想一想放在哪里了。。
-user_data = pd.read_excel('数据处理/data_sheets.xlsx', sheet_name='user_data2')
-user_list = []
-request_num = user_data.iloc[:, 5:11]
-request_sum = [0]
-for i in range(6):
-    request_sum.append(request_num.iloc[:, i].sum())
+# user_data = pd.read_excel('数据处理/data_sheets.xlsx', sheet_name='user_data2')
+# user_list = []
+# request_num = user_data.iloc[:, 5:11]
+# request_sum = [0]
+# for i in range(6):
+#     request_sum.append(request_num.iloc[:, i].sum())
 
 # print(request_sum)
 
 # 虽然这边做错了 但是对结果无影响 因为本来就忘记算请求频率进去了。。。已修改
-for i in range(len(user_data)):
-    temp = user_data.loc[i].values[0:11]
-    temp_user = User(i + 1, temp[1], temp[2], temp[3], temp[5:])
-    user_list.append(temp_user)
+# for i in range(len(user_data)):
+#     temp = user_data.loc[i].values[0:11]
+#     temp_user = User(i + 1, temp[1], temp[2], temp[3], temp[5:])
+#     user_list.append(temp_user)
 
 # if __name__ == '__main__':
 #     planCR = [[2, 3, 11, 13, 18, 18, -1, -1], [15, -1, -1, -1, -1, -1, -1, -1], [14, -1, -1, -1, -1, -1],

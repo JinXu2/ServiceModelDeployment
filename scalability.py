@@ -14,7 +14,8 @@ from queue import Queue
 import copy
 from sklearn.cluster import AffinityPropagation
 from KM import KMediod
-from LatencyDAG import DAG
+from LatencyDAG import LDAG
+from costDAG import CDAG
 
 '''
 设定原始数据 从data.xlsx读取想要的数据
@@ -41,9 +42,16 @@ user_data = pd.read_excel('data.xlsx', sheet_name=sheet_name)
 # 选择边缘服务器数据
 E = input("请选择边缘服务器数据表")
 sheet_name = "edge_data" + E
+
+# edge_data 在这里读的时候 就不读id 直接建立index
+
 edge_data = pd.read_excel('data.xlsx', sheet_name=sheet_name)
+edge_len = len(edge_data)
+edge_data.drop(['id'], axis=1, inplace=True)
+edge_data.insert(0, 'index', list(range(edge_len)))
+print(edge_data)
 capacity = edge_data['capacity'].to_list()  # 这个可以直接获取
-edge_location = edge_data[['id', 'LATITUDE', 'LONGITUDE']].values
+edge_location = edge_data[['index', 'LATITUDE', 'LONGITUDE']].values
 
 '''
 对用户请求进行 模块请求总和 和AP聚类计算 离散度计算 获取每个模块的优先级
@@ -237,10 +245,10 @@ df = pd.DataFrame(request_sum,
                            's15', 's16', 's17', 's18', 's19', 's20'])
 
 edge_data = pd.concat([edge_data, df], axis=1)
+
 '''
 生成各种部署方案
 '''
-edge_len = len(edge_data)
 
 
 # 欧式距离函数
@@ -263,7 +271,7 @@ def nearest_spare_edge(index, cur_plan):
     """
     # 首先按照距离近远进行排序 sort sorted cmp func真的把人整吐了 直接换最笨的
     distance = []
-    print("进入判断最近空闲ES函数中")
+    # print("进入判断最近空闲ES函数中")
     for i in range(len(edge_location)):
         x = edge_location[index]
         y = edge_location[i]
@@ -276,6 +284,7 @@ def nearest_spare_edge(index, cur_plan):
     res = -1
 
     for i in range(len(edge_location3)):
+        # 注意mark是排序后的Index
         mark = int(edge_location3[i, 0])
         if len(cur_plan[mark]) < capacity[mark]:
             print(len(cur_plan[mark]))
@@ -284,8 +293,8 @@ def nearest_spare_edge(index, cur_plan):
             res = mark
             break
 
-    print("找到离" + str(index) + "最近的空闲ES是")
-    print(res)
+    # print("找到离" + str(index) + "最近的空闲ES是")
+    # print(res)
     return res
 
 
@@ -322,14 +331,15 @@ def ga_plan():
     plan_group = []
     for j in range(pop_size):
         print("生成第" + str(j) + "个个体")
-        plan = [[] for i in range(E)]
+        plan = [[] for i in range(edge_len)]
         for i in range(1, 21):
-            # print("当前处理模块", i)
+            print("当前处理模块", i)
             column = 's' + str(i)
             # 根据redundant获得的冗余部署模块数
             k_num = redundancy[i - 1]
             # 读取对应列数的数据
             data = edge_data[['index', 'LATITUDE', 'LONGITUDE', column]]
+
             mean = data[column].mean()
             total = data[column].sum()
             # print("平均值为", mean)
@@ -351,6 +361,16 @@ def ga_plan():
 
             # print(type(selected_data))
             # print(selected_data.shape)
+            '''
+            可能会出现 聚类中心数量大于数据量的情况 这时候就需要进行操作
+            
+            print("高频被选择了 %s 条数据，需要聚成 %s 个点",len(selected_data),high_k_num)
+            print("低频被选择了 %s 条数据，需要聚成 %s 个点", len(data), low_k_num)
+            '''
+            if high_k_num > len(selected_data):
+                rest_high_num = high_k_num - len(selected_data)
+                high_k_num = len(selected_data)
+
             # 获得要部署该模块的位置
 
             test_one = KMediod(n_points=selected_num, k_num_center=high_k_num, data=selected_data)
@@ -362,8 +382,9 @@ def ga_plan():
             centroids2 = centroids2[:, 0].tolist()
             # print(centroids2)
             centroids = centroids1 + centroids2
-            # print("当前模块" + str(i) + "需要部署在以下ES上")
-            # print(centroids)
+            print("当前模块" + str(i) + "需要部署在以下ES上")
+
+            print(centroids)
             # plt.savefig("./temp_redundancy{}.png".format(i))
             # plt.clf()
             # plt.show()
@@ -376,7 +397,7 @@ def ga_plan():
                     # print(str(j) + "位置已满")
                     # print(len(plan[j]))
                     # print(capacity[j])
-                    plan[nearest_spare_edge(j)].append(i)
+                    plan[nearest_spare_edge(j, plan)].append(i)
 
             # check1 = [0 for i in range(20)]
             # check2 = []
@@ -391,6 +412,12 @@ def ga_plan():
     pop = encode(plan_group)
     print(pop)
 
+
+print("开始生成GA初始化方案")
+ga_plan()
+
+
+# 获取了之后，放到另一个文件去做 GA的评估 但是随之而来的是 要把相应的数据都传过去 如果能异步就好了
 
 # 随机方案生成
 def random_plan():
@@ -538,7 +565,7 @@ print(LB_plan)
 首先要创建 用户和边缘服务器的对象列表 创建对应的属性，才能在evaluate里面使用
 '''
 
-#创建服务器列表
+# 创建服务器列表
 
 edge_list = []
 for i in range(edge_len):
@@ -552,20 +579,21 @@ for i in range(edge_len):
 # 创建用户列表
 user_list = []
 for i in range(len(user_data)):
-    temp=user_data.loc[i].values[0:]
-    temp_user = User(no=temp[0],latitude=temp[1],longitude=temp[2],area=temp[3],request=temp[4:10])
+    temp = user_data.loc[i].values[0:]
+    temp_user = User(no=temp[0], latitude=temp[1], longitude=temp[2], area=temp[3], request=temp[4:10])
     user_list.append(temp_user)
 
 # for user in user_list:
 #     print(user)
 
 # 创建应用的数据集大小
-app_data = [0, 10, 20, 5, 15, 5, 15] # 输入的
-app_data_1 = app_data # 输出的
+app_data = [0, 10, 20, 5, 15, 5, 15]  # 输入的
+app_data_1 = app_data  # 输出的
 
 
+# app_list 是全局变量
 def evaluate_latency(cur_plan, cur_edge, cur_user):
-    test_one = DAG(plan=cur_plan, service_type_sum=20, edge_list=cur_edge, app_list=app_list)
+    test_one = LDAG(plan=cur_plan, service_type_sum=20, edge_list=cur_edge, app_list=app_list)
     print("进入完全随机CR算法")
     p_total, t_total = test_one.run(user_list=cur_user)
     print("CR总传播网络延迟")
@@ -573,4 +601,15 @@ def evaluate_latency(cur_plan, cur_edge, cur_user):
     print("CR总传输网络延迟")
     print(t_total)
 
-evaluate_latency(CR_plan,edge_list,user_list)
+
+# evaluate_latency(CR_plan,edge_list,user_list)
+
+def evaluate_cost(cur_plan, cur_edge, cur_user):
+    test_one = CDAG(plan=cur_plan, service_type_sum=20, edge_list=cur_edge, app_list=app_list)
+    print("进入完全随机CR算法")
+    c_total = test_one.run(user_list=cur_user)
+    print("CR总传播成本")
+    print(c_total)
+
+
+evaluate_cost(CR_plan, edge_list, user_list)

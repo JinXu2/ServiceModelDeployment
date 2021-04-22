@@ -6,9 +6,5 @@ class User:
         self.longitude = longitude
         self.request = request
 
-from Logger import Logger
-import sys
-sys.stdout = Logger('E:\ServiceModelDeployment\est.txt')
-if __name__ == '__main__':
-    for i in range(2000):
-        print(i)
+    def __str__(self):
+        return "%s no. user, area is %s,latitude is %s, longitude is %s, request is" % (self.no, self.area,self.latitude,self.longitude) + str(self.request)

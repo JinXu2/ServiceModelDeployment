@@ -20,25 +20,26 @@ class KMediod():
         self.k_num_center = k_num_center
         self.data = data
 
-    def get_test_data(self):
-        """
-        产生测试数据, n_samples表示多少个点, n_features表示几维, centers
-        得到的data是n个点各自坐标
-        target是每个坐标的分类比如说我规定好四个分类，target长度为n范围为0-3，主要是画图颜色区别
-        :return: none
-        """
-        # self.data, target = make_blobs(n_samples=self.n_points, n_features=2, centers=self.n_points)
-        # print(self.data)
-        np.put(self.data, [self.n_points, 0], 500, mode='clip')
-        np.put(self.data, [self.n_points, 1], 500, mode='clip')
-        pyplot.scatter(self.data[:, 0], self.data[:, 1], c='blue')
-        # 画图
-        pyplot.show()
+    # def get_test_data(self):
+    #     """
+    #     产生测试数据, n_samples表示多少个点, n_features表示几维, centers
+    #     得到的data是n个点各自坐标
+    #     target是每个坐标的分类比如说我规定好四个分类，target长度为n范围为0-3，主要是画图颜色区别
+    #     :return: none
+    #     """
+    #     # self.data, target = make_blobs(n_samples=self.n_points, n_features=2, centers=self.n_points)
+    #     # print(self.data)
+    #     np.put(self.data, [self.n_points, 0], 500, mode='clip')
+    #     np.put(self.data, [self.n_points, 1], 500, mode='clip')
+    #     pyplot.scatter(self.data[:, 0], self.data[:, 1], c='blue')
+    #     # 画图
+    #     pyplot.show()
 
+    # 修改欧式距离的计算
     def ou_distance(self,  x, y):
         # 定义欧式距离的计算
-        x = x[1:-1]
-        y = y[1:-1]
+        x = x[1:]
+        y = y[1:]
         return np.sqrt(sum(np.square(x - y)))
 
     def run_k_center(self, func_of_dis):
@@ -50,7 +51,8 @@ class KMediod():
         # print('初始化', self.k_num_center, '个中心点')
         indexs = list(range(len(self.data)))
         random.shuffle(indexs)  # 随机选择质心 为了每次结果能一样 就不随机选择质心了
-        init_centroids_index = indexs[:self.k_num_center]
+
+        init_centroids_index = indexs[:self.k_num_center] #顺序打乱了 所以选择了前面K个作为质心
         centroids = self.data[init_centroids_index, :]  # 初始中心点
         # print(centroids)
         # 确定种类编号
@@ -71,6 +73,9 @@ class KMediod():
                 # 统计，方便迭代完成后重新计算中间点
                 classify_points[cur_level].append(sample)
             # 重新划分质心
+
+
+
             for i in range(self.k_num_center):  # 几类中分别寻找一个最优点
                 distances = [func_of_dis(point_1, centroids[i]) for point_1 in classify_points[i]]
                 now_distances = sum(distances)  # 首先计算出现在中心点和其他所有点的距离总和
@@ -115,10 +120,10 @@ class KMediod():
         # self.get_test_data()
         # 需要的是 中心点的结果
         predict, centroids = self.run_k_center(self.ou_distance)
-        blue_color = ['dodgerblue', 'steelblue', 'lightskyblue', 'deepskyblue', 'cadetblue', 'darkturquoise']
-        for i in range(len(self.data)):
-            pyplot.scatter(self.data[i, 1], self.data[i, 2], c=blue_color[predict[i]], alpha=0.8)
-        pyplot.scatter(centroids[:, 1], centroids[:, 2], c='blue', marker="+")
+        # blue_color = ['dodgerblue', 'steelblue', 'lightskyblue', 'deepskyblue', 'cadetblue', 'darkturquoise']
+        # for i in range(len(self.data)):
+        #     pyplot.scatter(self.data[i, 1], self.data[i, 2], c=blue_color[predict[i]], alpha=0.8)
+        # pyplot.scatter(centroids[:, 1], centroids[:, 2], c='blue', marker="+")
         return centroids
         # pyplot.show()
 
